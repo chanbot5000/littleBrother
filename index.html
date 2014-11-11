@@ -10,39 +10,83 @@
 
 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-
-	
-
 </head>
 <body>
-	<div data-role="page" id="foo">
+	<div data-role="page" id="mainPage">
+		<div data-role="header">
+			<h4>Little Brother</h4>
+		</div>
 
-	<div data-role="header">
-		
-		<h4>Little Brother</h4>
+		<div role="main" class="ui-content">
+			<div id="map"></div>
+		</div>
 
+		<div data-position="fixed" data-role="footer">
+			<center>
+				<button class="ui-btn ui-corner-all" id="addCameraButton" onclick="addMarker">Add Camera</button>
+				<a href="#helpPage"><button class="ui-btn ui-corner-all" id="helpButton">Help</button></a>
+
+			</center>
+		</div>	
 	</div>
 
-	<div role="main" class="ui-content">
-		<div id="map"></div>
+	<div data-role="page" id="submitPage">
+		<div data-role="header">
+			<h4>Little Brother</h4>
+		</div>
+
+		<div role="main" class="ui-content">
+			<p>Please fill out the following form to help build a database of where Big Brother is watching. Add a photo if you can.</p>
+			
+			<label id="labelCameraDesc" for="cameraDesc">Description of Camera Location:</label>
+			
+		</div>
+
+		<div data-position="fixed" data-role="footer">
+			<center>
+				<button class="ui-btn ui-corner-all" id="submitButton">Submit</button>
+				<button class="ui-btn ui-corner-all" id="cancelButton">Cancel</button>
+			</center>
+		</div>	
 	</div>
 
-	<div data-position="fixed" data-role="footer">
-		<center>
-			<button class="ui-btn ui-corner-all" id="addCameraButton">Add Camera</button>
-			<button class="ui-btn ui-corner-all" id="helpButton">Help</button>
-		</center>
-	</div>	
-</div>
+	<div data-role="page" id="helpPage">
+		<div data-role="header">
+			<h4>Help</h4>
+		</div>
+
+		<div role="main" class="ui-content">
+			<p>To add a camera to the map...blah blah blah</p>
+			<p>Help section coming soon...</p>
+		</div>
+
+		<div data-position="fixed" data-role="footer">
+			<center>
+				<a href="#mainPage"><button class="ui-btn ui-corner-all" id="backButton">Back</button></a>
+			</center>
+		</div>	
+	</div>
+
 </body>
 
 <script type="text/javascript">
 
+		//code change here
+
 		var map = L.map('map');
 
-		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-			maxZoom: 18
+		var markerList = [];
+
+		var Hydda_Base = L.tileLayer('http://{s}.tile.openstreetmap.se/hydda/base/{z}/{x}/{y}.png', {
+			minZoom: 0,
+			maxZoom: 18,
+			attribution: 'Tiles courtesy of <a href="http://hot.openstreetmap.se/" target="_blank">OpenStreetMap Sweden</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+		}).addTo(map);
+
+		var Hydda_RoadsAndLabels = L.tileLayer('http://{s}.tile.openstreetmap.se/hydda/roads_and_labels/{z}/{x}/{y}.png', {
+			minZoom: 0,
+			maxZoom: 18,
+			attribution: 'Tiles courtesy of <a href="http://hot.openstreetmap.se/" target="_blank">OpenStreetMap Sweden</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
 		}).addTo(map);
 
 		map.locate({setView: true, maxZoom: 16});
@@ -52,8 +96,39 @@
 
 		$('#addCameraButton').click(function(){
 
-			//touch on map to place point
+			toast("Touch map to add camera");
+			map.addEventListener('click',addMarker,false);
 
+		});
+
+		function addMarker(e){
+			var latlng = e.latlng;
+			var marker = L.marker([latlng.lat,latlng.lng]);    
+			marker.addTo(map);
+			markerList.push(marker);
+			map.removeEventListener('click',addMarker,false);
+
+			setTimeout(function(){
+						$('#labelCameraDesc').before('<input type="file" capture="camera" accept="image/*" id="takePictureField">');
+						$('#labelCameraDesc').after('<textarea cols="40" rows="8" name="cameraDesc" id="cameraDesc"></textarea>');
+                        window.location.replace('#submitPage');
+                    }, 2000);
+		} 
+
+		$('#submitButton').click(function(){
+			toast("Thank you for your submission");
+			markerList.pop();
+			$('#cameraDesc').remove();
+			$('#takePictureField').remove();
+			window.location.replace('#mainPage');
+		});
+
+		$('#cancelButton').click(function(){
+			map.removeLayer(markerList[0]);
+			markerList.pop();
+			$('#cameraDesc').remove();
+			$('#takePictureField').remove();
+			window.location.replace('#mainPage');
 		});
 
 
@@ -65,8 +140,32 @@
 
 		function onLocationError(e) {
 		    alert(e.message);
+		}	
+
+		function toast(message) {
+		    var $toast = $('<div class="ui-loader ui-overlay-shadow ui-body-e ui-corner-all"><h3>' + message + '</h3></div>');
+
+		    $toast.css({
+		        display: 'block', 
+		        background: '#fff',
+		        opacity: 0.90, 
+		        position: 'fixed',
+		        padding: '7px',
+		        'text-align': 'center',
+		        width: '270px',
+		        left: ($(window).width() - 284) / 2,
+		        top: $(window).height() / 2 - 20
+		    });
+
+		    var removeToast = function(){
+		        $(this).remove();
+		    };
+
+		    $toast.click(removeToast);
+
+		    $toast.appendTo($.mobile.pageContainer).delay(2000);
+		    $toast.fadeOut(400, removeToast);
 		}
-		
 
 	</script>
 </html>
