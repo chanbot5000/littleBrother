@@ -15,8 +15,8 @@
 	<div data-role="page" id="mainPage">
 		<div data-role="header">
 			<h4>Little Brother</h4>
-		</div>
-
+		</div>  
+  
 		<div role="main" class="ui-content">
 			<div id="map"></div>
 		</div>
@@ -72,7 +72,7 @@
 <script type="text/javascript">
 
 		//code change here
-		var latlng;
+		var lat, lng;
 
 		var map = L.map('map');
 
@@ -104,6 +104,10 @@
 
 		function addMarker(e){
 			latlng = e.latlng;
+
+			lat = latlng.lat;
+			lng = latlng.lng;
+
 			var marker = L.marker([latlng.lat,latlng.lng]);    
 			marker.addTo(map);
 			markerList.push(marker);
@@ -121,20 +125,17 @@
 			var geometry = latlng.lat + " " + latlng.lng;
 			var desc = $('#cameraDesc').val();
 
-			var message = "";
+			console.log($('#takePictureField').val());
 
 			$.ajax({
 				type: 'GET',
 				url: 'postPoints.php',
-				data: 'latlng=' + latlng + '&description=' + desc,
+				data: 'lat=' + lat+ '&lng=' + lng + '&description=' + desc,
 				success: function(msg){
-					//$('#result').html(msg);
-					message = "Thank you for your submission");
 				}
 			});
 
-			toast(message);
-			//toast("Thank you for your submission");
+			toast("Thank you for your submission");
 			markerList.pop();
 			$('#cameraDesc').remove();
 			$('#takePictureField').remove();
