@@ -36,9 +36,19 @@
 		</div>
 
 		<div role="main" class="ui-content">
-			<p>Please fill out the following form to help build a database of where Big Brother is watching. Add a photo if you can.</p>
+			<p>Please fill out the following form to help build a database of where Big Brother is watching. Add a photo of the camera.</p>
 			
+			<div class="ui-field-contain">
+				<label for="cameraType" class="select">Camera Type:</label>
+				<select name="cameraType" id="cameraType">
+					<option value="private">Privately Operated</option>
+					<option value="public">Publicly Operated</option>
+					<option value="traffic">Traffic Camera</option>					
+				</select>
+			</div>
 			<label id="labelCameraDesc" for="cameraDesc">Description of Camera Location:</label>
+			<textarea cols="40" rows="8" name="cameraDesc" id="cameraDesc"></textarea>
+			<input class="ui-field-contain" type="file" capture accept="image/*" id="takePictureField">
 			
 		</div>
 
@@ -72,7 +82,7 @@
 <script type="text/javascript">
 
 		//code change here
-		var lat, lng;
+		var lat, lng, desc, cameraType;
 
 		var map = L.map('map');
 
@@ -114,32 +124,53 @@
 			map.removeEventListener('click',addMarker,false);
 
 			setTimeout(function(){
-						$('#labelCameraDesc').before('<input type="file" capture="camera" accept="image/*" id="takePictureField">');
-						$('#labelCameraDesc').after('<textarea cols="40" rows="8" name="cameraDesc" id="cameraDesc"></textarea>');
-                        window.location.replace('#submitPage');
-                    }, 2000);
+                window.location.replace('#submitPage');
+                }, 2000);
 		} 
 
 		$('#submitButton').click(function(){
 
 			var geometry = latlng.lat + " " + latlng.lng;
-			var desc = $('#cameraDesc').val();
+			desc = $('#cameraDesc').val();
+			cameraType = $('#cameraType').val();						
 
-			console.log($('#takePictureField').val());
+			var file_data = $('#takePictureField').prop('files')[0];
+			var form_data = new FormData();
+			form_data.append('file', file_data);
+			
+			var cameraValue = $('#takePictureField').val();
+			//alert(cameraValue);			
 
-			$.ajax({
-				type: 'GET',
-				url: 'postPoints.php',
-				data: 'lat=' + lat+ '&lng=' + lng + '&description=' + desc,
-				success: function(msg){
+			var imgName;
+
+			
+			if(cameraValue != ""){
+
+				try{
+					$.ajax({
+						url: 'imageProcessor.php',
+						dataType: 'text',
+						cache: false,
+						contentType: false,
+						processData: false,
+						data: form_data,
+						type: 'post',
+						success: function(php_script_response){
+							createPoint(php_script_response);
+						}
+					});
+
+					markerList.pop();
+					window.location.replace('#mainPage');
+
+				}catch(err){
+					createPoint();
+					console.log(err);
 				}
-			});
 
-			toast("Thank you for your submission");
-			markerList.pop();
-			$('#cameraDesc').remove();
-			$('#takePictureField').remove();
-			window.location.replace('#mainPage');
+			}else{
+				toast("You need to add an image before submitting");				
+			}			
 		});
 
 		$('#cancelButton').click(function(){
@@ -150,6 +181,21 @@
 			window.location.replace('#mainPage');
 		});
 
+		function createPoint(imgName){
+
+			var img = imgName;
+			console.log(img);
+
+			$.ajax({
+				type: 'GET',
+				url: 'postPoints.php',
+				data: 'lat=' + lat+ '&lng=' + lng + '&description=' + desc + '&imgName=' + img + '&cameraType=' + cameraType,
+				success: function(msg){		
+					alert(msg);
+					toast("Thank you for your submission");
+				}
+			});
+		}
 
 		function onLocationFound(e) {
 		    var radius = e.accuracy / 2;

@@ -15,13 +15,35 @@
 	$con = pg_connect("host=$host dbname=$db user=$user password=$pass")
 	or die ("Could not connect to server\n"); 
 	
+	
+
 	$lat = $_GET['lat'];
 	$lng = $_GET['lng'];
-	$point = $lat . ' ' . $lng; 
-	$description = $_GET['description'];	
+	$point = $lng . ' ' . $lat; 
+	$description = $_GET['description'];
+	$imgName = $_GET['imgName'] . '.jpg';
+	$cameraType = $_GET['cameraType'];
+	$imgUrl = 'http://lb.indulgencelabs.com/img/' . $imgName;
+	
 
-	$query = "INSERT INTO pending VALUES('POINT(" . $point . ")', '" . $description . "','no');";
-
+	//test vars
+	/*
+	$lat = -118;
+	$lng = 34;
+	$point = $lat . ' ' . $lng;
+	$description = 'testing description';
+	$imgName = 'asdfadsfadsf';
+	$cameraType = 'public';
+	*/
+	
+    //geography
+	//$query = "INSERT INTO pending VALUES(ST_GeographyFromText('SRID=4326;POINT(" . $point . ")'), '" . $description . "','no', '" . $imgName . "', '" . $cameraType . "');";
+	
+	//geometry
+	$query = "INSERT INTO pending VALUES(ST_GeomFromText('POINT(" . $point . ")',4326), '" . $description . "','no', '" . $cameraType . "', '" . $lng . "', '" . $lat . "', '" . $imgName . "', '" . $imgUrl . "');";
+	
+	//INSERT INTO pending VALUES ('POINT(-118, 36)');
+	echo $query;
 	//perform the insert using pg_query
 	$result = pg_query($con, $query);
 
